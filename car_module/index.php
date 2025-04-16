@@ -27,61 +27,91 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY id DESC")->fetchAll(PDO::FETCH_
 <!DOCTYPE html>
 <html lang="fa">
 <head>
+    <script src="jquery-3.7.1.min.js"></script>
+
+    <script src="persian-date.min.js"></script>
+
+    <script src="persian-datepicker.min.js"></script>
+    <link rel="stylesheet" href="persian-datepicker.min.css">
+
     <script src="numberToWord.js"></script>
     <meta charset="UTF-8">
     <title>مدیریت ماشین‌ها</title>
     <style>
         body {
             font-family: sans-serif;
-            margin: 40px;
+            direction: rtl;
             background: #f9f9f9;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 30px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 5px #ccc;
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin: 5px 0;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button.btn {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button.btn:hover {
+            background-color: #45a049;
         }
 
         table {
-            border-collapse: collapse;
             width: 100%;
-            margin-bottom: 20px;
+            border-collapse: collapse;
             background: #fff;
+            box-shadow: 0 0 5px #ccc;
         }
 
         th, td {
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
         }
 
-        th {
-            background-color: #eee;
-        }
-
-        form {
-            background: #fff;
-            padding: 20px;
-            border: 1px solid #ccc;
-            max-width: 500px;
-            margin-bottom: 30px;
-        }
-
-        input, select {
-            padding: 8px;
-            margin: 5px 0;
-            width: 100%;
-        }
-
-        .btn {
-            padding: 8px 12px;
-            background: #28a745;
+        a.btn {
+            padding: 5px 10px;
+            background: #3498db;
             color: white;
-            border: none;
-            cursor: pointer;
+            text-decoration: none;
+            border-radius: 5px;
         }
 
-        .btn-danger {
-            background: #dc3545;
+        a.btn-danger {
+            background: #e74c3c;
         }
 
-        .btn:hover {
-            opacity: 0.9;
+        td[data-price]:hover::after {
+            content: attr(data-price-text);
+            display: block;
+            position: absolute;
+            background: #eee;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: #333;
+            font-size: 13px;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -95,7 +125,8 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY id DESC")->fetchAll(PDO::FETCH_
         <option value="inactive">غیرفعال</option>
     </select>
     <input type="number" step="0.01" name="price" placeholder="قیمت" required>
-    <input type="date" name="date" required>
+    <input type="hidden" name="date" id="date">
+    <input type="text" id="shamsi_date" name="shamsi_date" placeholder="تاریخ" required>
     <input type="time" name="time" required>
     <button type="submit" name="create" class="btn">افزودن</button>
 </form>
@@ -116,22 +147,12 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY id DESC")->fetchAll(PDO::FETCH_
             <td><?= $car['id'] ?></td>
             <td><?= htmlspecialchars($car['title']) ?></td>
             <td><?= $car['status'] ?></td>
-            <td data-price="<?= $car['price'] ?>"
-                onmouseover="showPriceInWords(this)">
-                <?= number_format($car['price']) ?>
+            <td class="price-cell"
+                data-price="<?= $car['price'] ?>"
+                data-price-text="<?= number_format($car['price']) ?> تومان">
+                <?= number_format($car['price']) ?> تومان
             </td>
-            <!--            <td data-price=" -->
-            <?php //= $pric_to_word = NumberToPersian::convert($car['price']); ?><!--"-->
-            <!--                onmouseover="showPriceInWords(this)">-->
-            <!--                --><?php //= number_format($car['price']) ?>
-            <!--            </td>-->
-
-            <td>
-                <?php
-                list($gy, $gm, $gd) = explode('-', $car['date']);
-                echo gregorian_to_jalali($gy, $gm, $gd, '/'); 
-                ?>
-            </td>
+            <td><?= $car['date'] ?></td>
             <td><?= $car['time'] ?></td>
             <td>
                 <a href="edit.php?id=<?= $car['id'] ?>" class="btn">ویرایش</a>
@@ -140,6 +161,26 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY id DESC")->fetchAll(PDO::FETCH_
         </tr>
     <?php endforeach; ?>
 </table>
+<script>
+    $(document).ready(function () {
+        $("#shamsi_date").persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: false,
+            onSelect: function (unix) {
+                const miladi = new persianDate(unix).toCalendar('gregorian').format("YYYY-MM-DD");
+                $("#date").val(miladi);
+            }
+        });
+    });
+    $(document).ready(function () {
+        $('.price-cell').hover(function () {
+            let price = parseInt($(this).data('price'));
+            let priceInWords = numberToPersianWords(price);
+            $(this).attr('data-price-text', priceInWords + ' تومان');
+        });
+    });
+
+</script>
 
 </body>
 </html>
